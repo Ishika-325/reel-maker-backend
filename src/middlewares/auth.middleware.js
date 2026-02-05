@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken"
 import  User  from "../models/user.model.js";
 export const verifyJWT = asyncHandler(async(req , res , next) => {
     try {
-        console.log("this is verifyJWT middleware");
+        
         const token= req.cookies?.accessToken
         
     
