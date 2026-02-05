@@ -57,8 +57,7 @@ const login = asyncHandler (async (req, res) => {
         return res.status(401).json({message: "Incorrect password"})
     }
     const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
-    console.log("Access:", accessToken);
-    console.log("Refresh:", refreshToken);
+    
 
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken" );
@@ -79,7 +78,7 @@ const login = asyncHandler (async (req, res) => {
 
 
 const logout = asyncHandler(async (req, res) => {
-    console.log("logout called in backend");
+    
    try{ 
      if (req.user?._id) {
     await User.findByIdAndUpdate(req.user._id, 
