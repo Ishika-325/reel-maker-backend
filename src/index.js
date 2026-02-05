@@ -7,6 +7,7 @@ const app = express();
 dotenv.config({
     path: './.env'
 });
+app.set("trust proxy", 1);
 app.use(cors({
   origin: process.env.FRONTEND,
   credentials: true // allow cookies
