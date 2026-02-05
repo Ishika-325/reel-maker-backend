@@ -126,15 +126,14 @@ const getAllReels = asyncHandler(async (req, res) => {
   try {
         const userId = req.user._id;
         
-        // 1. Log to verify exactly what we are sending to MongoDB
-        console.log("Querying Reels for userId:", userId);
+    
+        
 
         // 2. Perform the find
         // Use .lean() to get a plain JS object (faster and avoids Mongoose internal errors)
         const reels = await Reel.find({ userId: userId }).lean().sort({ createdAt: -1 });
 
-        // 3. Log the result count
-        console.log(`Found ${reels.length} reels for this user.`);
+        
 
         // 4. Return response
         return res.status(200).json({
