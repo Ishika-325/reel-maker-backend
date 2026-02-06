@@ -73,67 +73,76 @@ export const generateReelVideo = async (reelId) => {
       audioFilePath = tempAudioFile;
     }
 
+   
     // 🎬 FFmpeg render
-    await new Promise((resolve, reject) => {
-      const command = ffmpeg()
-        .input(tempListFile.replace(/\\/g, "/"))
-        .inputFormat("concat")
-        .inputOptions(["-safe 0"]);
+await new Promise((resolve, reject) => {
+  const command = ffmpeg()
+    .input(tempListFile.replace(/\\/g, "/"))
+    .inputFormat("concat")
+    .inputOptions(["-safe 0"]);
 
-      if (audioFilePath) {
-        command.input(audioFilePath).inputOptions(["-stream_loop -1"]);
+  if (audioFilePath) {
+    command.input(audioFilePath).inputOptions(["-stream_loop -1"]);
+  }
+
+  command.outputOptions(
+    [
+      "-t " + totalDuration,
+      "-pix_fmt yuv420p",
+
+      // ✅ LOWER RESOLUTION
+      "-vf scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2",
+
+      "-shortest",
+      "-map 0:v:0",
+
+      // ✅ VIDEO OPTIMIZATION
+      "-c:v libx264",
+      "-preset ultrafast",
+      "-profile:v high",
+      "-level 4.2",
+      "-movflags +faststart",
+
+      // ✅ AUDIO OPTIMIZATION
+      audioFilePath ? "-map 1:a:0" : "",
+      audioFilePath ? "-c:a aac" : "",
+      audioFilePath ? "-b:a 128k" : "",
+    ].filter(Boolean)
+  );
+
+  command
+    .on("start", (cmd) => {
+      console.log("▶ FFmpeg command:\n", cmd);
+    })
+    .on("end", () => {
+      console.log("✅ Reel created:", outputPath);
+
+      // 🧹 CLEANUP
+      try {
+        if (fs.existsSync(tempListFile)) fs.unlinkSync(tempListFile);
+        if (audioFilePath && fs.existsSync(audioFilePath))
+          fs.unlinkSync(audioFilePath);
+      } catch (e) {
+        console.log("Cleanup warning:", e.message);
       }
 
-      command.outputOptions(
-        [
-          "-t " + totalDuration,
-          "-pix_fmt yuv420p",
-          "-vf scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
-          "-shortest",
-          "-map 0:v:0",
-          "-c:v libx264",
-          "-profile:v high",
-          "-level 4.2",
-          "-movflags +faststart",
+      resolve(outputPath);
+    })
+    .on("error", (err) => {
+      console.error("❌ FFmpeg error:", err.message);
 
-          audioFilePath ? "-map 1:a:0" : "",
-          audioFilePath ? "-c:a aac" : "",
-          audioFilePath ? "-b:a 192k" : "",
-        ].filter(Boolean)
-      );
+      // 🧹 CLEANUP ON ERROR
+      try {
+        if (fs.existsSync(tempListFile)) fs.unlinkSync(tempListFile);
+        if (audioFilePath && fs.existsSync(audioFilePath))
+          fs.unlinkSync(audioFilePath);
+      } catch {}
 
-      command
-        .on("start", (cmd) => {
-          console.log("▶ FFmpeg command:\n", cmd);
-        })
-        .on("end", () => {
-          console.log("✅ Reel created:", outputPath);
+      reject(err);
+    })
+    .save(outputPath);
+});
 
-          // 🧹 CLEANUP
-          try {
-            if (fs.existsSync(tempListFile)) fs.unlinkSync(tempListFile);
-            if (audioFilePath && fs.existsSync(audioFilePath))
-              fs.unlinkSync(audioFilePath);
-          } catch (e) {
-            console.log("Cleanup warning:", e.message);
-          }
-
-          resolve(outputPath);
-        })
-        .on("error", (err) => {
-          console.error("❌ FFmpeg error:", err.message);
-
-          // 🧹 CLEANUP ON ERROR
-          try {
-            if (fs.existsSync(tempListFile)) fs.unlinkSync(tempListFile);
-            if (audioFilePath && fs.existsSync(audioFilePath))
-              fs.unlinkSync(audioFilePath);
-          } catch {}
-
-          reject(err);
-        })
-        .save(outputPath);
-    });
 
     return outputPath;
   } catch (err) {
