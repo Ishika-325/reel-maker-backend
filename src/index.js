@@ -22,6 +22,9 @@ import userRoutes from './routes/user.routes.js';
 import reelRoutes from './routes/reel.routes.js'
 app.use('/api/users', userRoutes);
 app.use('/api/reels', reelRoutes);
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
 
 
 
